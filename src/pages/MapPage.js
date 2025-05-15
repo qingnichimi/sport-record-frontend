@@ -140,12 +140,9 @@ const MapPage = () => {
   const fetchToken = async (code) => {
     try {
       const res = await stravaService.getTokenByCode(code);
-      if (res.code === 0) {
-        localStorage.setItem('stravaTokens', JSON.stringify(res.data));
-        // 清理URL中的授权信息
-        window.history.replaceState({}, document.title, window.location.pathname);
-        // 重新获取活动数据
-        await fetchActivities();
+      if (res.code === 200) {
+        // 使用 replace 强制替换当前 URL
+        window.location.replace(window.location.pathname);
       } else {
         // 处理获取token失败
       }
