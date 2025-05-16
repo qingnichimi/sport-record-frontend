@@ -18,7 +18,7 @@ class StravaService {
   // 获取活动数据
   async getActivities(page = 1, pageSize = 10) {
     try {
-      const response = await axios.get(`${this.apiBaseUrl}/api/strava/athlete/activity/list`, {
+      const response = await axios.get(`/api/strava/athlete/activity/list`, {
         params: {
           page,
           pageSize
@@ -32,14 +32,20 @@ class StravaService {
   }
 
   async getActivityDetails(activityId) {
-    const response = await fetch(`${this.apiBaseUrl}/api/strava/athlete/activity/${activityId}`);
-    return await response.json();
+    try {
+      const response = await axios.get(`/api/strava/athlete/activity/${activityId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching activity details:', error.response?.data || error.message);
+      throw error;
+    }
   }
+
 
   // 获取训练建议
   async getTrainingSuggestion() {
     try {
-      const response = await axios.get(`${this.apiBaseUrl}/api/training/suggestion`);
+      const response = await axios.get(`/api/training/suggestion`);
       return response.data;
     } catch (error) {
       console.error('Error fetching training suggestion:', error.response?.data || error.message);
@@ -48,7 +54,7 @@ class StravaService {
   }
 
   async getTokenByCode(code) {
-    const response = await axios.post(`${this.apiBaseUrl}/api/strava/getAccessToken?code=${code}`);
+    const response = await axios.post(`/api/strava/getAccessToken?code=${code}`);
     return response.data;
   }
 }

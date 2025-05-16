@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   Box,
   Button,
@@ -13,7 +14,7 @@ import {
   Typography
 } from '@mui/material'; // 引入 MUI 组件
 import { styled } from '@mui/material/styles';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useLocation } from 'react-router-dom';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -41,7 +42,7 @@ const CustomTableContainer = styled(TableContainer)({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
 });
-const StyledTableRow = styled(TableRow)(({ theme, isSelected }) => ({
+const StyledTableRow = styled(TableRow)(({ isSelected }) => ({
   backgroundColor: isSelected ? '#2c3e50' : 'transparent', // 选中时的背景色
   '&:hover': {
     backgroundColor: isSelected ? '#2c3e50' : '#34495e', // 悬浮效果
@@ -104,7 +105,7 @@ const MapPage = () => {
   };
 
   // 获取训练建议
-  const fetchTrainingSuggestion = async () => {
+  const fetchTrainingSuggestion = useCallback(async () => {
     try {
       setIsLoadingSuggestion(true);
       const res = await stravaService.getTrainingSuggestion();
@@ -118,14 +119,13 @@ const MapPage = () => {
     } finally {
       setIsLoadingSuggestion(false);
     }
-  };
+  }, [stravaService, handleAuthorize]);
 
-  // 当切换到训练建议标签时获取建议
   useEffect(() => {
     if (activeTab === 1) {
       fetchTrainingSuggestion();
     }
-  }, [activeTab]);
+  }, [activeTab, fetchTrainingSuggestion]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -338,14 +338,14 @@ const MapPage = () => {
                   <div style={{ width: '100%' }}>
                     <ReactMarkdown
                       components={{
-                        h1: ({node, ...props}) => <Typography variant="h5" style={{ color: '#E0E0E0', marginTop: '16px', marginBottom: '8px', '@media (max-width: 768px)': { fontSize: '1.2rem' } }} {...props} />,
-                        h2: ({node, ...props}) => <Typography variant="h6" style={{ color: '#E0E0E0', marginTop: '12px', marginBottom: '6px', '@media (max-width: 768px)': { fontSize: '1.1rem' } }} {...props} />,
-                        h3: ({node, ...props}) => <Typography variant="subtitle1" style={{ color: '#E0E0E0', marginTop: '8px', marginBottom: '4px', '@media (max-width: 768px)': { fontSize: '1rem' } }} {...props} />,
-                        p: ({node, ...props}) => <Typography style={{ color: '#E0E0E0', marginBottom: '8px', '@media (max-width: 768px)': { fontSize: '0.9rem' } }} {...props} />,
-                        ul: ({node, ...props}) => <ul style={{ color: '#E0E0E0', marginLeft: '20px', marginBottom: '8px', '@media (max-width: 768px)': { marginLeft: '16px' } }} {...props} />,
-                        li: ({node, ...props}) => <li style={{ color: '#E0E0E0', marginBottom: '4px', '@media (max-width: 768px)': { fontSize: '0.9rem' } }} {...props} />,
-                        strong: ({node, ...props}) => <strong style={{ color: '#E0E0E0' }} {...props} />,
-                        em: ({node, ...props}) => <em style={{ color: '#E0E0E0' }} {...props} />,
+                        h1: ({...props}) => <Typography variant="h5" style={{ color: '#E0E0E0', marginTop: '16px', marginBottom: '8px' }} {...props} />,
+                        h2: ({...props}) => <Typography variant="h6" style={{ color: '#E0E0E0', marginTop: '12px', marginBottom: '6px' }} {...props} />,
+                        h3: ({...props}) => <Typography variant="subtitle1" style={{ color: '#E0E0E0', marginTop: '8px', marginBottom: '4px' }} {...props} />,
+                        p: ({...props}) => <Typography style={{ color: '#E0E0E0', marginBottom: '8px' }} {...props} />,
+                        ul: ({...props}) => <ul style={{ color: '#E0E0E0', marginLeft: '20px', marginBottom: '8px', '@media (max-width: 768px)': { marginLeft: '16px' } }} {...props} />,
+                        li: ({...props}) => <li style={{ color: '#E0E0E0', marginBottom: '4px', '@media (max-width: 768px)': { fontSize: '0.9rem' } }} {...props} />,
+                        strong: ({...props}) => <strong style={{ color: '#E0E0E0' }} {...props} />,
+                        em: ({...props}) => <em style={{ color: '#E0E0E0' }} {...props} />,
                       }}
                     >
                       {trainingSuggestion || '暂无建议'}
