@@ -37,7 +37,7 @@ const decodePolyline = (encoded) => {
   return coordinates;
 };
 
-const Map = ({ activities, selectedActivity }) => {
+const ActivityMap = ({ activities, selectedActivity }) => {
   const mapRef = useRef(null); // 存储地图 DOM 容器
   const mapInstanceRef = useRef(null); // 存储地图实例
 
@@ -60,12 +60,28 @@ const Map = ({ activities, selectedActivity }) => {
 
       // 初始化地图
       const map = new AMap.Map(mapRef.current, {
-        center: [113.264385, 23.129112], // 广州市经纬度
-        zoom: 11, // 默认缩放级别
+        center: [104.114129, 37.550339], // 中国中心经纬度
+        zoom: 4, // 默认缩放级别，显示整个中国
         mapStyle: 'amap://styles/grey', // 设置地图的显示样式
+        viewMode: '2D', // 使用2D模式
+        dragEnable: true, // 允许拖拽
+        zoomEnable: true, // 允许缩放
+        doubleClickZoom: true, // 允许双击缩放
+        keyboardEnable: false, // 禁用键盘操作
+        jogEnable: false, // 禁用缓动效果
+        scrollWheel: true, // 允许鼠标滚轮缩放
+        touchZoom: true, // 允许触摸缩放
+        showIndoorMap: false, // 不显示室内地图
+        showBuildingBlock: false, // 不显示建筑物
+        showLabel: true, // 显示地图文字标注
+        defaultCursor: 'default', // 默认鼠标样式
+        limitBounds: new AMap.Bounds(
+          [73.446960, 18.158695], // 中国西南角坐标
+          [135.085831, 53.558656]  // 中国东北角坐标
+        ), // 限制地图显示范围在中国范围内
+        zoomLimit: [3, 18] // 限制缩放级别
       });
       mapInstanceRef.current = map;
-
     };
 
     loadMapScript();
@@ -76,6 +92,50 @@ const Map = ({ activities, selectedActivity }) => {
     Ride: '#00FF00', // 蓝色
     // 添加其他活动类型和对应的颜色
   };
+
+  // 添加城市标记点
+  const addCityMarkers = (activities) => {
+    if (!mapInstanceRef.current || !activities) return;
+
+    const { AMap } = window;
+    const cityMap = new Map(); // 用于存储城市信息
+
+    // 统计每个城市的活动数量
+    activities.forEach(activity => {
+      if (activity.city) {
+        if (!cityMap.has(activity.city)) {
+          cityMap.set(activity.city, {
+            count: 1,
+            coordinates: [activity.startLatlng[0], activity.startLatlng[1]]
+          });
+        } else {
+          const cityInfo = cityMap.get(activity.city);
+          cityInfo.count += 1;
+        }
+      }
+    });
+
+    // 为每个城市创建标记
+    cityMap.forEach((info, cityName) => {
+      const marker = new AMap.Marker({
+        position: new AMap.LngLat(info.coordinates[1], info.coordinates[0]),
+        content: `<div style="
+          background-color: rgba(44, 62, 80, 0.8);
+          color: #E0E0E0;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: ${Math.min(12 + info.count, 20)}px;
+          white-space: nowrap;
+          border: 1px solid #ffdb49;
+        ">${cityName} (${info.count})</div>`,
+        offset: new AMap.Pixel(-10, -10),
+        anchor: 'bottom-center'
+      });
+
+      mapInstanceRef.current.add(marker);
+    });
+  };
+
   // 绘制活动轨迹
   useEffect(() => {
     if (!mapInstanceRef.current || !activities || activities.length === 0) return;
@@ -84,39 +144,34 @@ const Map = ({ activities, selectedActivity }) => {
 
     // 清除之前的轨迹
     mapInstanceRef.current.clearMap();
+    
+    // 添加城市标记
+    addCityMarkers(activities);
+
     // 遍历活动数据，绘制每条轨迹
     activities.forEach((activity) => {
       if (activity.map?.summaryPolyline) {
-        const coordinates = decodePolyline(activity.map.summaryPolyline); // 解码轨迹数据
-        const path = coordinates.map((coord) => new AMap.LngLat(coord[1], coord[0])); // 转换为高德地图的经纬度格式
-        // 获取活动类型对应的颜色，默认为灰色
+        const coordinates = decodePolyline(activity.map.summaryPolyline);
+        const path = coordinates.map((coord) => new AMap.LngLat(coord[1], coord[0]));
         const strokeColor = activityTypeColors[activity.type] || '#808080';
         const polyline = new AMap.Polyline({
           path: path,
-          strokeColor: strokeColor, // 轨迹颜色
-          strokeWeight: 2, // 轨迹宽度
-          strokeOpacity: 0.8, // 轨迹透明度
+          strokeColor: strokeColor,
+          strokeWeight: 2,
+          strokeOpacity: 0.8,
         });
-        mapInstanceRef.current.add(polyline); // 将轨迹添加到地图
+        mapInstanceRef.current.add(polyline);
       }
     });
+  }, [activities]);
 
-    // 调整地图视野以显示所有轨迹
-    if (activities.length > 0) {
-      const bounds = new AMap.Bounds();
-      activities.forEach((activity) => {
-        if (activity.map?.summaryPolyline) {
-          const coordinates = decodePolyline(activity.map.summaryPolyline);
-          coordinates.forEach((coord) => bounds.extend(new AMap.LngLat(coord[1], coord[0])));
-        }
-      });
-      mapInstanceRef.current.setLimitBounds(bounds);
-    }
-  }, [activities]); // 当 activities 变化时重新绘制轨迹
   useEffect(() => {
     if (selectedActivity && mapInstanceRef.current) {
       // 清除之前的轨迹并绘制选中的活动轨迹
       mapInstanceRef.current.clearMap();
+
+      // 重新添加城市标记
+      addCityMarkers(activities);
 
       if (selectedActivity.map?.summaryPolyline) {
         const { AMap } = window;
@@ -126,19 +181,19 @@ const Map = ({ activities, selectedActivity }) => {
 
         const polyline = new AMap.Polyline({
           path: path,
-          strokeColor: strokeColor, // 轨迹颜色
-          strokeWeight: 3, // 轨迹宽度
-          strokeOpacity: 0.8, // 轨迹透明度
+          strokeColor: strokeColor,
+          strokeWeight: 3,
+          strokeOpacity: 0.8,
         });
         mapInstanceRef.current.add(polyline);
         
-        // 定位到轨迹的起始点并设置固定缩放级别
         const firstCoord = coordinates[0];
         mapInstanceRef.current.setCenter(new AMap.LngLat(firstCoord[1], firstCoord[0]));
-        mapInstanceRef.current.setZoom(16.5, true, 500);
+        mapInstanceRef.current.setZoom(8, true, 500);
       }
     }
-  }, [selectedActivity]); // 选中的活动变化时，重新绘制
+  }, [selectedActivity]);
+
   return (
     <div 
       ref={mapRef} 
@@ -154,7 +209,7 @@ const Map = ({ activities, selectedActivity }) => {
 };
 
 // 添加 PropTypes 验证
-Map.propTypes = {
+ActivityMap.propTypes = {
   activities: PropTypes.arrayOf(
     PropTypes.shape({
       map: PropTypes.shape({
@@ -171,4 +226,4 @@ Map.propTypes = {
 };
 
 
-export default Map;
+export default ActivityMap;

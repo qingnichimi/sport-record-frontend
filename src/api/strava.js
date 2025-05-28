@@ -57,6 +57,11 @@ class StravaService {
     const response = await axios.post(`/api/strava/getAccessToken?code=${code}`);
     return response.data;
   }
+
+  async getActivityStatistics() {
+    const response = await axios.get(`/api/strava/athlete/activity/statistics`);
+    return response.data;
+  }
 }
 
 export default StravaService;
