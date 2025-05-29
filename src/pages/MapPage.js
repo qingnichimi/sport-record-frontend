@@ -1,6 +1,10 @@
 import {
   Box,
+  Divider,
   Grid,
+  List,
+  ListItem,
+  ListItemText,
   Paper,
   Typography
 } from '@mui/material';
@@ -29,6 +33,14 @@ const StatLabel = styled(Typography)({
   color: '#E0E0E0',
   fontSize: '0.9rem',
   marginBottom: '4px'
+});
+
+const ListTitle = styled(Typography)({
+  color: '#E0E0E0',
+  fontSize: '1.1rem',
+  fontWeight: 'bold',
+  marginTop: '16px',
+  marginBottom: '8px'
 });
 
 const MapPage = () => {
@@ -79,8 +91,8 @@ const MapPage = () => {
           cityCount: res.data.totalCity,
           totalDistance: res.data.totalDistance,
           currentYearDistance: res.data.currentYearDistance,
-          typeStats: res.data.typeStats || [],
-          yearlyStats: res.data.yearlyStats || []
+          distanceByYear: res.data.distanceByYear || [],
+          distanceByType: res.data.distanceByType || []
         });
       }
     } catch (error) {
@@ -118,7 +130,7 @@ const MapPage = () => {
       position: 'fixed',
       margin: 0,
       padding: 0,
-      gap: '16px'
+      gap: '1px'
     }}>
       {/* 左侧统计区域 (30%) */}
       <div style={{ 
@@ -127,7 +139,7 @@ const MapPage = () => {
         backgroundColor: '#2c3e50',
         display: 'flex',
         flexDirection: 'column',
-        marginLeft: '16px'
+        marginLeft: '2px'
       }}>
         <TransparentPaper style={{ flex: 1, overflow: 'hidden' }}>
           <Box p={2} style={{ 
@@ -136,14 +148,6 @@ const MapPage = () => {
             flexDirection: 'column',
             overflow: 'hidden'
           }}>
-            <Typography variant="h6" style={{ 
-              color: '#ffdb49', 
-              marginBottom: '24px',
-              flexShrink: 0 
-            }}>
-              运动统计
-            </Typography>
-            
             <Grid 
               container 
               spacing={2} 
@@ -155,7 +159,7 @@ const MapPage = () => {
             >
               {/* 总活动数 */}
               <Grid item xs={6}>
-                <StatLabel>总活动数</StatLabel>
+                <StatLabel>总次数</StatLabel>
                 <StatValue>{statistics.totalActivities}</StatValue>
               </Grid>
 
@@ -167,31 +171,55 @@ const MapPage = () => {
 
               {/* 本年度里程 */}
               <Grid item xs={6}>
-                <StatLabel>本年度里程</StatLabel>
+                <StatLabel>本年里程</StatLabel>
                 <StatValue>{statistics.currentYearDistance} km</StatValue>
               </Grid>
 
               {/* 运动城市数量 */}
               <Grid item xs={6}>
-                <StatLabel>运动城市数量</StatLabel>
+                <StatLabel>城市数量</StatLabel>
                 <StatValue>{statistics.cityCount}</StatValue>
               </Grid>
 
               {/* 运动类型统计 */}
-              {statistics.typeStats.map((stat, index) => (
-                <Grid item xs={6} key={index}>
-                  <StatLabel>{stat.type}</StatLabel>
-                  <StatValue>{stat.distance} km</StatValue>
-                </Grid>
-              ))}
+              <Grid item xs={12}>
+                <ListTitle>运动类型</ListTitle>
+                <List>
+                  {Object.entries(statistics.distanceByType || {}).map(([type, distance], index, array) => (
+                    <React.Fragment key={type}>
+                      <ListItem>
+                        <ListItemText 
+                          primary={type}
+                          secondary={`${distance} km`}
+                          primaryTypographyProps={{ style: { color: '#E0E0E0' } }}
+                          secondaryTypographyProps={{ style: { color: '#ffdb49' } }}
+                        />
+                      </ListItem>
+                      {index < array.length - 1 && <Divider style={{ backgroundColor: '#34495e' }} />}
+                    </React.Fragment>
+                  ))}
+                </List>
+              </Grid>
 
               {/* 年度统计 */}
-              {statistics.yearlyStats.map((stat, index) => (
-                <Grid item xs={6} key={`year-${index}`}>
-                  <StatLabel>{stat.year}年</StatLabel>
-                  <StatValue>{stat.distance} km</StatValue>
-                </Grid>
-              ))}
+              <Grid item xs={12}>
+                <ListTitle>年度统计</ListTitle>
+                <List>
+                  {Object.entries(statistics.distanceByYear || {}).map(([year, distance], index, array) => (
+                    <React.Fragment key={year}>
+                      <ListItem>
+                        <ListItemText 
+                          primary={`${year}年`}
+                          secondary={`${distance} km`}
+                          primaryTypographyProps={{ style: { color: '#E0E0E0' } }}
+                          secondaryTypographyProps={{ style: { color: '#ffdb49' } }}
+                        />
+                      </ListItem>
+                      {index < array.length - 1 && <Divider style={{ backgroundColor: '#34495e' }} />}
+                    </React.Fragment>
+                  ))}
+                </List>
+              </Grid>
             </Grid>
           </Box>
         </TransparentPaper>
